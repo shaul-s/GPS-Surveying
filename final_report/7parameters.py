@@ -58,6 +58,26 @@ def itm2GRS80(x, y, H):
 
 def seven_pars_adjustment(cp_wgs84, cp_grs80):
 
+    L = (cp_grs80.T - cp_wgs84.T).flatten()
+    A = []
+    I = np.eye(3)
+
+    for p in cp_wgs84.T:
+        aa = np.zeros((p.shape[0], p.shape[0] + 1))
+        aa[:, 0] = p.T
+        aa[:, 1] = np.array([0, p[-1], -p[1]])
+        aa[:, 2] = np.array([-p[-1], 0, -p[0]])
+        aa[:, 3] = np.array([p[1], -p[0], 0])
+        aa = np.hstack((I, aa))
+        A.append(aa)
+
+    A = np.vstack(A)
+
+    N = np.dot(A.T, A)
+    u = np.dot(A.T, L)
+
+    X = np.solve(N, u)
+
 
 
 if __name__ == '__main__':
@@ -72,3 +92,4 @@ if __name__ == '__main__':
         cp_grs80.append(itm2GRS80(p[0], p[1], p[2]))
 
     cp_grs80 = np.hstack(cp_grs80)
+    seven_pars_adjustment(cp_wgs84, cp_grs80)
