@@ -77,7 +77,7 @@ def seven_pars_adjustment(cp_wgs84, cp_grs80):
     u = np.dot(A.T, L)
 
     X = np.solve(N, u)
-
+    pass
 
 
 if __name__ == '__main__':
