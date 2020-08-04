@@ -57,7 +57,12 @@ def itm2GRS80(x, y, H):
 
 
 def seven_pars_adjustment(cp_wgs84, cp_grs80):
-
+    """
+    compute 7 parameters for datum transformation
+    :param cp_wgs84:
+    :param cp_grs80:
+    :return:
+    """
     L = (cp_grs80.T - cp_wgs84.T).flatten()
     A = []
     I = np.eye(3)
@@ -66,7 +71,7 @@ def seven_pars_adjustment(cp_wgs84, cp_grs80):
         aa = np.zeros((p.shape[0], p.shape[0] + 1))
         aa[:, 0] = p.T
         aa[:, 1] = np.array([0, p[-1], -p[1]])
-        aa[:, 2] = np.array([-p[-1], 0, -p[0]])
+        aa[:, 2] = np.array([-p[-1], 0, p[0]])
         aa[:, 3] = np.array([p[1], -p[0], 0])
         aa = np.hstack((I, aa))
         A.append(aa)
@@ -76,8 +81,8 @@ def seven_pars_adjustment(cp_wgs84, cp_grs80):
     N = np.dot(A.T, A)
     u = np.dot(A.T, L)
 
-    X = np.solve(N, u)
-    pas
+    return np.linalg.solve(N, u)
+
 
 
 if __name__ == '__main__':
@@ -92,4 +97,21 @@ if __name__ == '__main__':
         cp_grs80.append(itm2GRS80(p[0], p[1], p[2]))
 
     cp_grs80 = np.hstack(cp_grs80)
-    seven_pars_adjustment(cp_wgs84, cp_grs80)
+    seven_pars = seven_pars_adjustment(cp_wgs84, cp_grs80)
+
+    # test
+    dX = seven_pars[0:3]
+    m = 1 + seven_pars[3]
+    rx = seven_pars[4]
+    ry = seven_pars[5]
+    rz = seven_pars[-1]
+
+    R = np.eye(3)
+    R[0, 1] = rz
+    R[0, -1] = -ry
+    R[1, 0] = -rz
+    R[1, -1] = rx
+    R[-1, 0] = ry
+    R[-1, 1] = -rx
+
+    dX + m * np.dot(R, cp_wgs84[:, 0])
